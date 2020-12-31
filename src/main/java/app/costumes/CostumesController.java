@@ -1,5 +1,6 @@
 package app.costumes;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -14,6 +15,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @RestController
+@Slf4j
 public class CostumesController {
 
     private List<Costume> receivedCostumes = new ArrayList<Costume>();
@@ -36,15 +38,24 @@ public class CostumesController {
     }
 
     @RequestMapping(value = "/sale/{id}", method = RequestMethod.POST)
-    public void AddCostume(@PathVariable int id) throws IOException, InterruptedException {
-        HttpClient client = HttpClient.newBuilder().build();
+    public ResponseEntity AddCostume(@PathVariable int id) {
 
-        var request = HttpRequest.newBuilder()
-                .POST(HttpRequest.BodyPublishers.ofString("{\"costumeId\":\"" + id + "\", \"channel\":\"Amazon\"}"))
-                .header("Content-Type", "application/json")
-                .uri(URI.create(subscriberUrl + "/notify/sale"))
-                .build();
+        try {
+            HttpClient client = HttpClient.newBuilder().build();
 
-        client.send(request, HttpResponse.BodyHandlers.discarding());
+            String body = "{\"costumeId\":\"" + id + "\", \"channel\":\"Amazon\"}";
+            String url = subscriberUrl + "/notify/sale";
+            log.info("Sending "+body+" to url "+url);
+            var request = HttpRequest.newBuilder()
+                    .POST(HttpRequest.BodyPublishers.ofString(body))
+                    .header("Content-Type", "application/json")
+                    .uri(URI.create(url))
+                    .build();
+            client.send(request, HttpResponse.BodyHandlers.discarding());
+            return new ResponseEntity(HttpStatus.OK);
+        } catch (Exception e) {
+            log.error(e.getLocalizedMessage());
+            return new ResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 }
