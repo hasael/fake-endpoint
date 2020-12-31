@@ -1,5 +1,6 @@
 package app.costumes;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -17,19 +18,21 @@ public class CostumesController {
 
     private List<Costume> receivedCostumes = new ArrayList<Costume>();
 
+    @Value("${subscriber.url}")
+    private String subscriberUrl;
 
     @RequestMapping(value = "/costume", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
-    public void AddCostume(@RequestBody Costume costume){
+    public void AddCostume(@RequestBody Costume costume) {
         receivedCostumes.add(costume);
     }
 
 
-    @RequestMapping(value = "/costume/{id}", method = RequestMethod.GET )
-    public ResponseEntity getCostume(@PathVariable int id){
-         if(receivedCostumes.stream().filter(x -> x.getCostumeId() == id).count()>0)
-             return new ResponseEntity(HttpStatus.OK);
-         else
-             return new ResponseEntity(HttpStatus.NOT_FOUND);
+    @RequestMapping(value = "/costume/{id}", method = RequestMethod.GET)
+    public ResponseEntity getCostume(@PathVariable int id) {
+        if (receivedCostumes.stream().filter(x -> x.getCostumeId() == id).count() > 0)
+            return new ResponseEntity(HttpStatus.OK);
+        else
+            return new ResponseEntity(HttpStatus.NOT_FOUND);
     }
 
     @RequestMapping(value = "/sale/{id}", method = RequestMethod.POST)
@@ -39,7 +42,7 @@ public class CostumesController {
         var request = HttpRequest.newBuilder()
                 .POST(HttpRequest.BodyPublishers.ofString("{\"costumeId\":\"" + id + "\", \"channel\":\"Amazon\"}"))
                 .header("Content-Type", "application/json")
-                .uri(URI.create("http://localhost:8082/notify/sale"))
+                .uri(URI.create(subscriberUrl + "/notify/sale"))
                 .build();
 
         client.send(request, HttpResponse.BodyHandlers.discarding());
